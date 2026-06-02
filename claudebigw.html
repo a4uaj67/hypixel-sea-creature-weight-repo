@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Hypixel Sea Creature Calculator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap');
+:root{
+  --bg:#020617;--panel:#0d1526;--panel2:#111f36;--panel3:#1a2d47;
+  --border:#1e3a5f;--border2:#2a4a6e;--text:#c8d8ee;--text2:#7a9cc0;
+  --accent:#38bdf8;--accent2:#0ea5e9;--rare:#a78bfa;--epic:#f472b6;
+  --leg:#fbbf24;--myth:#fb923c;--common:#86efac;--unc:#67e8f9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(ellipse 80% 50% at 50% -20%,rgba(56,189,248,0.08),transparent);
+  font-family:'JetBrains Mono',monospace;color:var(--text);
+  padding:28px 20px;min-height:100vh;
+}
+.card{
+  max-width:1300px;margin:auto;
+  background:linear-gradient(160deg,var(--panel) 0%,#08111f 100%);
+  border:1px solid var(--border);border-radius:20px;
+  padding:28px;box-shadow:0 0 60px rgba(14,165,233,0.07),0 4px 40px rgba(0,0,0,0.5);
+}
+h2{
+  font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;
+  color:var(--accent);letter-spacing:-0.02em;margin-bottom:6px;
+  text-shadow:0 0 20px rgba(56,189,248,0.3);
+}
+.subtitle{font-size:0.72rem;color:var(--text2);margin-bottom:22px;letter-spacing:0.05em;text-transform:uppercase;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px;}
+.grid-wide{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:14px;}
+.box{
+  background:var(--panel2);padding:11px 13px;border-radius:12px;
+  border:1px solid var(--border);transition:border-color .2s;
+}
+.box:hover{border-color:var(--border2);}
+.box label.main{display:block;font-size:0.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+select{
+  width:100%;background:var(--panel3);color:var(--text);border:1px solid var(--border2);
+  border-radius:7px;padding:6px 8px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;
+  cursor:pointer;outline:none;
+}
+select:focus{border-color:var(--accent);}
+.range-wrap{display:flex;align-items:center;gap:8px;}
+input[type=range]{
+  flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
+  background:linear-gradient(to right,var(--accent) 0%,var(--accent) var(--pct,0%),var(--panel3) var(--pct,0%));
+  outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(56,189,248,0.5);}
+.range-val{font-size:0.85rem;font-weight:600;color:var(--accent);min-width:22px;text-align:right;}
+
+/* Checkbox grid */
+.check-section{margin-bottom:14px;}
+.check-section-title{font-size:0.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.check-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.check-item{
+  display:flex;align-items:center;gap:7px;
+  background:var(--panel2);border:1px solid var(--border);border-radius:9px;
+  padding:7px 12px;cursor:pointer;transition:all .18s;font-size:0.78rem;
+  user-select:none;
+}
+.check-item:hover{border-color:var(--border2);background:var(--panel3);}
+.check-item.active{border-color:var(--accent);background:rgba(56,189,248,0.08);color:var(--accent);}
+.check-item.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none;}
+.check-item input{display:none;}
+.check-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid currentColor;transition:all .15s;flex-shrink:0;}
+.check-item.active .check-dot{background:currentColor;box-shadow:0 0 6px currentColor;}
+
+/* Colored variants */
+.check-item.hotspot-style.active{border-color:#34d399;color:#34d399;}
+.check-item.spooky-style.active{border-color:#c084fc;color:#c084fc;}
+.check-item.shark-style.active{border-color:#38bdf8;color:#38bdf8;}
+.check-item.festival-style.active{border-color:var(--leg);color:var(--leg);}
+
+/* Stats bar */
+.stats{
+  display:flex;gap:20px;align-items:center;
+  background:var(--panel2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 16px;margin-bottom:16px;font-size:0.8rem;
+}
+.stat{color:var(--text2);}
+.stat span{color:var(--text);font-weight:600;}
+
+/* Table */
+table{width:100%;border-collapse:collapse;}
+thead th{
+  background:var(--panel3);color:var(--text2);
+  font-size:0.65rem;text-transform:uppercase;letter-spacing:.1em;
+  padding:9px 10px;text-align:left;border-bottom:1px solid var(--border2);
+  font-weight:400;
+}
+thead th:not(:first-child){text-align:right;}
+tbody tr{border-bottom:1px solid rgba(30,58,95,0.5);transition:background .12s;}
+tbody tr:hover{background:rgba(56,189,248,0.04);}
+td{padding:8px 10px;font-size:0.8rem;vertical-align:middle;}
+td:not(:first-child){text-align:right;}
+.rarity{display:inline-block;font-size:0.6rem;padding:1px 6px;border-radius:4px;font-weight:600;letter-spacing:.05em;margin-left:6px;}
+.rarity.C{background:rgba(134,239,172,0.15);color:var(--common);}
+.rarity.U{background:rgba(103,232,249,0.15);color:var(--unc);}
+.rarity.R{background:rgba(167,139,250,0.15);color:var(--rare);}
+.rarity.E{background:rgba(244,114,182,0.15);color:var(--epic);}
+.rarity.L{background:rgba(251,191,36,0.15);color:var(--leg);}
+.rarity.M{background:rgba(251,146,60,0.15);color:var(--myth);}
+.chance{color:var(--accent);}
+.mods-cell{font-size:0.7rem;color:var(--text2);}
+.divider{height:1px;background:linear-gradient(to right,transparent,var(--border),transparent);margin:16px 0;}
+</style>
+</head><body>
+<div class="card">
+  <h2>Sea Creature Calculator</h2>
+  <p class="subtitle">Hypixel SkyBlock &nbsp;·&nbsp; Fishing Weight Tool</p>
+
+  <div class="grid">
+    <div class="box">
+      <label class="main">Location</label>
+      <select id="location">
+        <option>Basic Water</option>
+        <option>Backwater Bayou</option>
+        <option>Lotus Atoll</option>
+        <option>Galatea</option>
+        <option>Jerry's Workshop</option>
+        <option>Crimson Isle</option>
+        <option>Crystal Hollows Water</option>
+        <option>Crystal Hollows Lava</option>
+      </select>
+    </div>
+    <div class="box">
+      <label class="main">Tracking Level &nbsp;<span class="range-val" id="tv">0</span></label>
+      <div class="range-wrap">
+        <input id="tracking" type="range" min="0" max="21" step="1" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="check-section">
+    <div class="check-section-title">Modifiers</div>
+    <div class="check-grid">
+      <label class="check-item" id="lbl-hotspot">
+        <input type="checkbox" id="hotspot">
+        <span class="check-dot"></span> In Hotspot
+      </label>
+      <label class="check-item" id="lbl-future">
+        <input type="checkbox" id="future">
+        <span class="check-dot"></span> Future Calories (+0.5 Tracking)
+      </label>
+      <label class="check-item" id="lbl-blaze">
+        <input type="checkbox" id="blaze">
+        <span class="check-dot"></span> Blaze Pet (Crimson ×1.10)
+      </label>
+    </div>
+  </div>
+
+  <div class="check-section">
+    <div class="check-section-title">Festivals</div>
+    <div class="check-grid">
+      <label class="check-item festival-style" id="lbl-sharkFestival">
+        <input type="checkbox" id="sharkFestival">
+        <span class="check-dot"></span> Shark Festival
+      </label>
+      <label class="check-item festival-style" id="lbl-spookyFestival">
+        <input type="checkbox" id="spookyFestival">
+        <span class="check-dot"></span> Spooky Festival
+      </label>
+    </div>
+  </div>
+
+  <div class="check-section">
+    <div class="check-section-title">Bait (pick one)</div>
+    <div class="check-grid">
+      <label class="check-item" id="lbl-whaleBait"><input type="checkbox" id="whaleBait"><span class="check-dot"></span> Whale Bait</label>
+      <label class="check-item hotspot-style" id="lbl-hotspotBait"><input type="checkbox" id="hotspotBait"><span class="check-dot"></span> Hotspot Bait</label>
+      <label class="check-item spooky-style" id="lbl-spookyBait"><input type="checkbox" id="spookyBait"><span class="check-dot"></span> Spooky Bait</label>
+      <label class="check-item shark-style" id="lbl-sharkBait"><input type="checkbox" id="sharkBait"><span class="check-dot"></span> Shark Bait</label>
+    </div>
+  </div>
+
+  <div class="check-section">
+    <div class="check-section-title">Hook (pick one)</div>
+    <div class="check-grid">
+      <label class="check-item" id="lbl-commonHook"><input type="checkbox" id="commonHook"><span class="check-dot"></span> Common Hook</label>
+      <label class="check-item hotspot-style" id="lbl-hotspotHook"><input type="checkbox" id="hotspotHook"><span class="check-dot"></span> Hotspot Hook</label>
+      <label class="check-item spooky-style" id="lbl-spookyHook"><input type="checkbox" id="spookyHook"><span class="check-dot"></span> Spooky Hook</label>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="stats">
+    <div class="stat">Creatures: <span id="count">0</span></div>
+    <div class="stat">Total Weight: <span id="total">0</span></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Base</th>
+        <th>Adjusted</th>
+        <th>Chance %</th>
+        <th>Multipliers</th>
+      </tr>
+    </thead>
+    <tbody id="results"></tbody>
+  </table>
+</div>
+
+<script>
+const D={
+basic:[["Squid",1200,"C"],["Sea Walker",800,"C"],["Sea Witch",700,"U"],["Sea Archer",550,"U"],["Rider of the Deep",400,"U"],["Catfish",250,"R"],["Sea Leech",160,"R"],["Guardian Defender",130,"E"],["Deep Sea Protector",88,"E"],["Water Hydra",18,"L"]],
+bayou:[["Trash Gobbler",5000,"C"],["Dumpster Diver",2875,"U"],["Banshee",1500,"R"],["Bayou Sludge",500,"E"],["Alligator",100,"L"],["Titanoboa",25,"M"]],
+lotus:[["Atoll Croaker",5000,"C"],["Lotus Guardian",2875,"U"],["gorF",1500,"R"],["Drowned Captain",500,"E"],["Puddle Jumper",100,"L"],["Frog Prince",25,"M"]],
+galatea:[["Bogged",5000,"C"],["Wetwing",2875,"U"],["Tadgang",1500,"R"],["Ent",1500,"E"],["Stridersurfer",200,"R"],["The Loch Emperor",100,"L"],["Nessie",25,"M"]],
+winter:[["Frozen Steve",5000,"C"],["Frosty",2875,"U"],["Grinch",1500,"R"],["Nutcracker",500,"E"],["Yeti",100,"L"],["Reindrake",25,"M"]],
+crimson:[["Magma Slug",1600,"U"],["Moogma",1200,"U"],["Lava Leech",600,"R"],["Pyroclastic Worm",400,"R"],["Lava Flame",360,"R"],["Fire Eel",280,"R"],["Taurus",160,"E"],["Thunder",40,"L"],["Lord Jawbus",8,"M"]],
+hotspotWater:[["Frog Man",5000,"C"],["Inkling",2875,"U"],["Snapping Turtle",1500,"R"],["Manta Ray",500,"E"],["Blue Ringed Octopus",100,"L"],["Wiki Tiki",25,"M"]],
+hotspotCrimson:[["Fried Chicken",5000,"C"],["Volcanic Snail",2875,"U"],["Fireproof Witch",1500,"R"],["Magma Pillar",500,"E"],["Fiery Scuttler",100,"L"],["Ragnarok",25,"M"]],
+shark:[["Nurse Shark",2875,"U"],["Blue Shark",1500,"R"],["Tiger Shark",500,"E"],["Great White Shark",100,"L"]],
+spooky:[["Jumpin' Jack",5000,"C"],["Scarecrow",2875,"U"],["Nightmare",1500,"R"],["Werewolf",500,"E"],["Phantom Fisher",100,"L"],["Grim Reaper",25,"M"]],
+chw:[["Water Worm",300,"R"],["Poisoned Water Worm",300,"R"],["Abyssal Miner",90,"L"]],
+chl:[["Flaming Worm",180,"R"],["Lava Blaze",36,"E"],["Lava Pigman",36,"E"]]
+};
+
+const rarityLabel={C:"Common",U:"Uncommon",R:"Rare",E:"Epic",L:"Legendary",M:"Mythic"};
+const $=id=>document.getElementById(id);
+
+function basePool(){
+  switch($("location").value){
+    case "Basic Water": return [...D.basic];
+    case "Backwater Bayou": return [...D.bayou];
+    case "Lotus Atoll": return [...D.lotus];
+    case "Galatea": return [...D.galatea];
+    case "Jerry's Workshop": return [...D.winter];
+    case "Crimson Isle": return [...D.crimson];
+    case "Crystal Hollows Water": return [...D.basic,...D.chw];
+    case "Crystal Hollows Lava": return [...D.chl];
+  }
+  return [];
+}
+
+function setActive(id,val){
+  const lbl=document.getElementById("lbl-"+id);
+  if(!lbl) return;
+  if(val) lbl.classList.add("active"); else lbl.classList.remove("active");
+}
+function setDisabled(id,val){
+  const lbl=document.getElementById("lbl-"+id);
+  if(!lbl) return;
+  if(val){lbl.classList.add("disabled");$(id).disabled=true;}
+  else{lbl.classList.remove("disabled");$(id).disabled=false;}
+}
+
+function syncRules(){
+  const loc=$("location").value;
+  const isCrimson=loc==="Crimson Isle";
+  const isCrystal=loc.includes("Crystal");
+  const isJerry=loc==="Jerry's Workshop";
+  const noFestival=isCrimson||isCrystal||isJerry;
+
+  // Festivals are mutually exclusive and disabled on some locations
+  if($("sharkFestival").checked) $("spookyFestival").checked=false;
+  if($("spookyFestival").checked) $("sharkFestival").checked=false;
+  setDisabled("sharkFestival",noFestival);
+  setDisabled("spookyFestival",noFestival);
+  if(noFestival){$("sharkFestival").checked=false;$("spookyFestival").checked=false;}
+
+  // Hotspot disabled for Galatea and Crystal
+  const noHotspot=loc==="Galatea"||isCrystal;
+  setDisabled("hotspot",noHotspot);
+  if(noHotspot) $("hotspot").checked=false;
+
+  // Blaze only useful on Crimson
+  setDisabled("blaze",!isCrimson);
+  if(!isCrimson) $("blaze").checked=false;
+
+  // Baits: one active at a time; contextual availability
+  const baits=["whaleBait","hotspotBait","spookyBait","sharkBait"];
+  const activeBait=baits.find(x=>$(x).checked);
+  baits.forEach(id=>{
+    let allowed=true;
+    if(id==="hotspotBait" && !$("hotspot").checked) allowed=false;
+    if(id==="spookyBait" && !$("spookyFestival").checked) allowed=false;
+    if(id==="sharkBait" && !$("sharkFestival").checked) allowed=false;
+    if(!allowed){$(id).checked=false;}
+    const dis=!allowed||(!!activeBait && !$(id).checked);
+    setDisabled(id,dis);
+  });
+
+  // Hooks: one active at a time; contextual availability
+  const hooks=["commonHook","hotspotHook","spookyHook"];
+  const activeHook=hooks.find(x=>$(x).checked);
+  hooks.forEach(id=>{
+    let allowed=true;
+    if(id==="hotspotHook" && !$("hotspot").checked) allowed=false;
+    if(id==="spookyHook" && !$("spookyFestival").checked) allowed=false;
+    if(!allowed){$(id).checked=false;}
+    const dis=!allowed||(!!activeHook && !$(id).checked);
+    setDisabled(id,dis);
+  });
+
+  // Sync active classes
+  ["hotspot","future","blaze","sharkFestival","spookyFestival","whaleBait","hotspotBait","spookyBait","sharkBait","commonHook","hotspotHook","spookyHook"]
+    .forEach(id=>setActive(id,$(id).checked));
+
+  // Tracking range gradient
+  const t=$("tracking");
+  const pct=(t.value/t.max)*100;
+  t.style.setProperty("--pct",pct+"%");
+  $("tv").textContent=t.value;
+}
+
+function render(){
+  syncRules();
+  let p=basePool();
+  const loc=$("location").value;
+  const isCrimson=loc==="Crimson Isle";
+  const isCrystal=loc.includes("Crystal");
+  const isJerry=loc==="Jerry's Workshop";
+
+  if($("hotspot").checked) p.push(...(isCrimson?D.hotspotCrimson:D.hotspotWater));
+  if($("sharkFestival").checked && !isCrimson && !isCrystal && !isJerry) p.push(...D.shark);
+  if($("spookyFestival").checked && !isCrimson && !isCrystal && !isJerry) p.push(...D.spooky);
+
+  let total=0;
+  const rows=[];
+
+  for(const c of p){
+    let w=c[1];
+    const rarity=c[2];
+    const mods=[];
+
+    if($("commonHook").checked && rarity==="C"){w*=1.25;mods.push("Common Hook ×1.25");}
+    if($("whaleBait").checked && c[1]<400){w*=1.25;mods.push("Whale Bait ×1.25");}
+
+    let t=Number($("tracking").value);
+    if($("future").checked) t+=0.5;
+    if($("blaze").checked && isCrimson) t*=1.10;
+
+    if(rarity==="L"||rarity==="M"){
+      const mult=1+(t/100);
+      w*=mult;
+      if(t>0) mods.push("Tracking ×"+mult.toFixed(3));
+    }
+
+    const hot=[...D.hotspotWater,...D.hotspotCrimson].some(x=>x[0]===c[0]);
+    const sp=D.spooky.some(x=>x[0]===c[0]);
+    const sh=D.shark.some(x=>x[0]===c[0]);
+
+    if(hot && $("hotspotBait").checked){w*=1.2;mods.push("Hotspot Bait ×1.20");}
+    if(hot && $("hotspotHook").checked){w*=1.2;mods.push("Hotspot Hook ×1.20");}
+    if(sp && $("spookyBait").checked){w*=1.15;mods.push("Spooky Bait ×1.15");}
+    if(sp && $("spookyHook").checked){w*=1.2;mods.push("Spooky Hook ×1.20");}
+    if(sh && $("sharkBait").checked){w*=1.2;mods.push("Shark Bait ×1.20");}
+
+    total+=w;
+    rows.push([c[0],c[1],w,rarity,mods]);
+  }
+
+  $("count").textContent=rows.length;
+  $("total").textContent=total.toFixed(2);
+
+  $("results").innerHTML=rows.map(r=>{
+    const chancePct=(r[2]/total*100);
+    const chanceStr=chancePct<0.01?chancePct.toFixed(4):chancePct.toFixed(3);
+    return `<tr>
+      <td>${r[0]}<span class="rarity ${r[3]}">${r[3]}</span></td>
+      <td>${r[1]}</td>
+      <td>${r[2].toFixed(2)}</td>
+      <td class="chance">${chanceStr}%</td>
+      <td class="mods-cell">${r[4].join(" · ")||"—"}</td>
+    </tr>`;
+  }).join("");
+}
+
+document.querySelectorAll("input,select").forEach(e=>{
+  e.addEventListener("change",render);
+  e.addEventListener("input",render);
+});
+render();
+</script>
+</body></html>
